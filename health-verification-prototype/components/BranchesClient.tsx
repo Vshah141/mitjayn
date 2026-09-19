@@ -1,0 +1,6 @@
+'use client';
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { MapPin, Plus, Search } from 'lucide-react';
+import { Lab } from '@/lib/types';
+export function BranchesClient({branches}:{branches:Lab[]}){const[q,setQ]=useState('');const filtered=useMemo(()=>branches.filter(b=>`${b.name} ${b.address} ${b.postal_code}`.toLowerCase().includes(q.toLowerCase())),[branches,q]);return <><div className="relative mt-6"><Search className="absolute left-4 top-3.5 text-black/35" size={18}/><input className="input !pl-11" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search branches by area or postal code"/></div><div className="mt-5 grid gap-3">{filtered.map(b=><div key={b.id} className="card flex items-center gap-4 p-5"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-mint text-moss"><MapPin size={19}/></div><div className="min-w-0 flex-1"><h2 className="font-semibold">{b.name}</h2><p className="mt-1 truncate text-sm text-black/45">{b.address}</p></div><Link href={`/labs/${b.id}/book`} className="grid h-11 w-11 place-items-center rounded-2xl bg-ink text-white"><Plus size={18}/></Link></div>)}{filtered.length===0&&<div className="rounded-2xl border border-dashed border-black/10 p-8 text-center text-sm text-black/40">No branches match this search.</div>}</div></>}

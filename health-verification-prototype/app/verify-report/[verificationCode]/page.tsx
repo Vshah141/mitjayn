@@ -1,0 +1,18 @@
+import { notFound } from 'next/navigation';
+import { AlertTriangle, CheckCircle2, FileCheck2, ShieldQuestion } from 'lucide-react';
+import { Brand } from '@/components/Brand';
+import { StatusPill } from '@/components/StatusPill';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { getReportAuthenticity, requestFingerprint } from '@/lib/repository';
+
+export const dynamic = 'force-dynamic';
+
+export default async function ReportVerification({ params }: { params: { verificationCode: string } }) {
+  const rate=checkRateLimit(`report:${requestFingerprint()}`,45,60_000);
+  if(!rate.ok)return <main className="grid min-h-screen place-items-center p-6"><div className="card max-w-md p-8 text-center"><AlertTriangle className="mx-auto text-danger"/><h1 className="mt-4 text-2xl font-semibold">Verification temporarily rate-limited</h1><p className="mt-2 text-sm text-black/50">Please retry shortly.</p></div></main>;
+  const report=await getReportAuthenticity(params.verificationCode); if(!report){notFound();throw new Error('Report not found');}
+  const authentic=report.hash_check_available&&report.file_hash_matches===true;
+  const warning=report.hash_check_available&&report.file_hash_matches===false;
+  return <main className="min-h-screen px-4 py-8 sm:py-12"><div className="mx-auto max-w-2xl"><div className="flex items-center justify-between"><Brand/><span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-black/45 shadow-sm">Report authenticity</span></div><section className="card mt-7 p-6 sm:p-8"><div className={`grid h-16 w-16 place-items-center rounded-3xl ${authentic?'bg-mint text-moss':warning?'bg-red-50 text-danger':'bg-amber-50 text-amber-700'}`}>{authentic?<FileCheck2 size={30}/>:warning?<AlertTriangle size={30}/>:<ShieldQuestion size={30}/>}</div><h1 className="mt-5 text-3xl font-semibold tracking-tight">{authentic?'Authentic — matches original':warning?'Warning — file does not match our records':'Report record verified'}</h1><p className="mt-2 text-sm leading-6 text-black/50">{authentic?'The currently stored report file matches the SHA-256 fingerprint saved when the report was issued.':warning?'The stored document has changed since the original fingerprint was recorded. Treat this copy as untrusted.':'The verification code is valid. Full file-hash comparison is unavailable because this deployment does not have server-side storage verification configured.'}</p><div className="mt-7 divide-y divide-black/5 rounded-3xl bg-sand px-5"><Row label="Issuing lab" value={report.lab_name}/><Row label="Test / disease" value={report.disease_name}/><Row label="Report date" value={new Date(report.report_date+'T12:00:00').toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}/><div className="flex items-center justify-between gap-4 py-4"><span className="text-sm text-black/45">Report status</span><StatusPill status={report.status} compact/></div>{report.patient_name&&<Row label="Patient" value={report.patient_name}/>}</div><div className="mt-6 flex items-start gap-3 rounded-2xl border border-black/5 p-4"><CheckCircle2 size={18} className="mt-0.5 shrink-0 text-moss"/><p className="text-xs leading-5 text-black/50">This page confirms document authenticity only. It intentionally does not display the report's detailed measurements, values or full contents.</p></div></section></div></main>;
+}
+function Row({label,value}:{label:string;value:string}){return <div className="flex items-start justify-between gap-5 py-4"><span className="text-sm text-black/45">{label}</span><span className="text-right text-sm font-semibold">{value}</span></div>}

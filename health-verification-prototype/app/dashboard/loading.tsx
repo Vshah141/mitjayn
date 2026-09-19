@@ -1,0 +1,1 @@
+export default function Loading(){return <div className="mx-auto max-w-7xl animate-pulse space-y-5 p-5"><div className="h-12 w-64 rounded-2xl bg-black/5"/><div className="grid gap-5 xl:grid-cols-2"><div className="h-72 rounded-3xl bg-white"/><div className="h-72 rounded-3xl bg-white"/></div><div className="h-80 rounded-3xl bg-white"/></div>}

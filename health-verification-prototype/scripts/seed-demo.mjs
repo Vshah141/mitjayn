@@ -1,5 +1,7 @@
-import crypto from 'node:crypto';
+import WebSocket from 'ws'; // <-- Add this line
+globalThis.WebSocket = WebSocket;
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import QRCode from 'qrcode';
 
@@ -7,7 +9,20 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 if (!url || !service) throw new Error('Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before running npm run seed:demo');
-const supabase = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } });
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    global: {
+      WebSocket: WebSocket
+    }
+  }
+);
 
 const email = 'demo@mitjayn.app';
 const legacyEmail = 'demo@verihealth.app';

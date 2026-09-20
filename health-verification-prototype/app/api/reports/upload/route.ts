@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   const { data: report, error: reportError } = await admin.from('disease_reports').insert({
     profile_id: user.id,
     disease_name: extracted.disease_name,
-    status: extracted.extracted_status || 'not_updated',
+    status: 'not_updated',
     lab_id: null,
     report_date: extracted.report_date || new Date().toISOString().slice(0, 10),
     report_file_url: path,
@@ -83,23 +83,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: reportError.message }, { status: 400 });
   }
 
-  const profileUpdate: Record<string, string | number> = {};
-  if (extracted.patient_name) profileUpdate.name = extracted.patient_name;
-  if (typeof extracted.age === 'number') profileUpdate.age = extracted.age;
-  if (extracted.gender) profileUpdate.gender = extracted.gender;
-  if (extracted.date_of_birth) profileUpdate.date_of_birth = extracted.date_of_birth;
-  if (extracted.mobile_number) profileUpdate.mobile_number = extracted.mobile_number;
-
-  let updatedProfile = null;
-  if (Object.keys(profileUpdate).length) {
-    const { data, error } = await admin.from('profiles').update(profileUpdate).eq('id', user.id).select('*').single();
-    if (!error) updatedProfile = data;
-  }
-
-  return NextResponse.json({
+ return NextResponse.json(
+  {
     report,
     extracted,
-    profile: updatedProfile,
-    message: 'Report uploaded and parsed. It is visible on your profile but remains pending verification until a trusted lab verifies it.'
-  }, { status: 201 });
+    message:
+      'Report uploaded. Report name, date and lab were extracted; profile details were not changed. It remains pending verification until a trusted lab verifies it.'
+  },
+  { status: 201 }
+);
 }

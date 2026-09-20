@@ -25,7 +25,16 @@ export default function SignupPage() {
         const {data,error}=await supabase.auth.signUp({email:form.email,password:form.password,options:{data:{full_name:form.name}}}); if(error) throw error;
         if(!data.user) throw new Error('Account could not be created.');
         if(data.session){
-          const {error:profileError}=await supabase.from('profiles').upsert({id:data.user.id,name:form.name,mobile_number:form.mobile,date_of_birth:form.dob});
+          const {error:profileError}=await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            name: form.name,
+            mobile_number: form.mobile,
+            date_of_birth: form.dob,
+            age: null,
+            gender: null
+          });
           if(profileError) throw profileError;
         } else {
           router.push('/login'); return;

@@ -1,14 +1,18 @@
 import 'pdf-parse/worker';
 import { PDFParse } from 'pdf-parse';
 import { createWorker } from 'tesseract.js';
-import type { ExtractedReportMetadata, ReportStatus } from './types';
+import type { ExtractedReportMetadata } from './types';
 
 const diseasePatterns: Array<{ name: string; regex: RegExp }> = [
   { name: 'Covid-19', regex: /\b(covid[- ]?19|sars[- ]?cov[- ]?2|coronavirus)\b/i },
   { name: 'Monkeypox', regex: /\b(monkeypox|mpox)\b/i },
   { name: 'Dengue', regex: /\bdengue\b/i },
   { name: 'Malaria', regex: /\bmalaria\b/i },
-  { name: 'Swine Flu', regex: /\b(swine\s*flu|h1n1)\b/i }
+  { name: 'Swine Flu', regex: /\b(swine\s*flu|h1n1)\b/i },
+  { name: 'Haemoglobin', regex: /\b(h[a]?emoglobin|hb|hgb)\b/i },
+  { name: 'Uric Acid', regex: /\buric\s*acid\b/i },
+  { name: 'Cholesterol', regex: /\bcholest[e]?rol\b/i },
+  { name: 'Blood Glucose', regex: /\bblood\s*(glucose|sugar)\b/i }
 ];
 
 function clean(value?: string | null) {
@@ -48,15 +52,6 @@ function findDisease(text: string) {
   return diseasePatterns.find(item => item.regex.test(text))?.name ?? null;
 }
 
-function findStatus(text: string): ReportStatus {
-  const resultLine = labelValue(text, ['Result Status', 'Test Result', 'Result', 'Status']);
-  const normalized = (resultLine || text).toLowerCase();
-  if (/\b(not detected|negative|non[- ]?reactive|undetected)\b/.test(normalized)) return 'verified_negative';
-  if (/\b(detected|positive|reactive)\b/.test(normalized)) return 'detected_positive';
-  if (/\bnot found\b/.test(normalized)) return 'not_found';
-  return 'not_updated';
-}
-
 function findLabName(text: string) {
   const direct = labelValue(text, ['Lab Name', 'Laboratory', 'Diagnostic Center', 'Lab']);
   if (direct) return direct;
@@ -64,36 +59,25 @@ function findLabName(text: string) {
   return lines.find(line => /(lab|laborator|diagnostic|patholog|hospital)/i.test(line) && line.length < 100) ?? null;
 }
 
-function ageFromDob(dob: string, referenceDate?: string | null) {
-  const birth = new Date(`${dob}T12:00:00Z`);
-  const ref = new Date(`${referenceDate || new Date().toISOString().slice(0, 10)}T12:00:00Z`);
-  let age = ref.getUTCFullYear() - birth.getUTCFullYear();
-  const beforeBirthday = ref.getUTCMonth() < birth.getUTCMonth() || (ref.getUTCMonth() === birth.getUTCMonth() && ref.getUTCDate() < birth.getUTCDate());
-  if (beforeBirthday) age -= 1;
-  return age >= 0 && age <= 130 ? age : null;
-}
 
-export function parseReportText(text: string): ExtractedReportMetadata {
-  const patientName = labelValue(text, ['Patient Name', 'Patient']);
-  const dob = toIsoDate(labelValue(text, ['Date of Birth', 'DOB', 'Birth Date']));
-  const reportDate = toIsoDate(labelValue(text, ['Report Date', 'Date of Report', 'Result Date', 'Collection Date', 'Sample Date'])) || new Date().toISOString().slice(0, 10);
-  const ageRaw = labelValue(text, ['Age']);
-  const ageMatch = ageRaw?.match(/\b(\d{1,3})\b/);
-  const genderRaw = labelValue(text, ['Gender', 'Sex']);
-  const mobile = labelValue(text, ['Mobile Number', 'Mobile', 'Phone Number', 'Phone', 'Contact Number']);
-  const genderMatch = genderRaw?.match(/\b(male|female|other|non-binary|nonbinary)\b/i);
-  const diseaseName = findDisease(text);
+export function parseReportText(
+  text: string
+): ExtractedReportMetadata {
+  const reportDate =
+    toIsoDate(
+      labelValue(text, [
+        'Report Date',
+        'Date of Report',
+        'Result Date',
+        'Collection Date',
+        'Sample Date'
+      ])
+    ) || new Date().toISOString().slice(0, 10);
 
   return {
-    patient_name: patientName,
-    date_of_birth: dob,
-    age: ageMatch ? Number(ageMatch[1]) : dob ? ageFromDob(dob, reportDate) : null,
-    gender: genderMatch ? genderMatch[1].replace(/^./, c => c.toUpperCase()) : null,
-    mobile_number: mobile,
-    lab_name: findLabName(text),
+    disease_name: findDisease(text),
     report_date: reportDate,
-    disease_name: diseaseName,
-    extracted_status: findStatus(text)
+    lab_name: findLabName(text)
   };
 }
 

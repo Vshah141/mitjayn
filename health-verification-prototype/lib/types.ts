@@ -17,15 +17,9 @@ export type Profile = {
 };
 
 export type ExtractedReportMetadata = {
-  patient_name?: string | null;
-  age?: number | null;
-  gender?: string | null;
-  date_of_birth?: string | null;
-  mobile_number?: string | null;
-  lab_name?: string | null;
-  report_date?: string | null;
   disease_name?: string | null;
-  extracted_status?: ReportStatus | null;
+  report_date?: string | null;
+  lab_name?: string | null;
 };
 
 export type DiseaseReport = {

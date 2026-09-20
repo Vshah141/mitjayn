@@ -2,9 +2,31 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { Bell, CalendarDays, Camera, Copy, ExternalLink, FileText, Filter, Link2, Plus, Search, ShieldCheck, UserRound, X } from 'lucide-react';
-import type { Booking, DiseaseReport, NotificationItem, Profile, ReportStatus } from '@/lib/types';
-import { ProfileAvatar } from './ProfileAvatar';
+import {
+  Bell,
+  CalendarDays,
+  Camera,
+  Copy,
+  ExternalLink,
+  FileText,
+  Filter,
+  Link2,
+  Pencil,
+  Plus,
+  Search,
+  ShieldCheck,
+  UserRound,
+  X
+} from 'lucide-react';
+
+import type {
+  Booking,
+  DiseaseReport,
+  ExtractedReportMetadata,
+  NotificationItem,
+  Profile,
+  ReportStatus
+} from '@/lib/types';import { ProfileAvatar } from './ProfileAvatar';
 import { QRCode } from './QRCode';
 import { ReportUploadDialog } from './ReportUploadDialog';
 import { StatusPill } from './StatusPill';
@@ -30,6 +52,10 @@ export function DashboardClient({
   const [uploadOpen, setUploadOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState(initialNotifications);
+  const [profileEditOpen, setProfileEditOpen] = useState(false);
+  const [editAge, setEditAge] = useState(profile.age?.toString() ?? '');
+  const [editGender, setEditGender] = useState(profile.gender ?? '');
+  const [profileSaving, setProfileSaving] = useState(false);
 
   useEffect(() => {
     try {
@@ -104,21 +130,63 @@ export function DashboardClient({
     setNotice('Verification link copied.');
   }
 
-  function handleReportUploaded(result: { report: DiseaseReport; extracted: any; profile: Profile | null; message: string }) {
-    const report = { ...result.report, lab_name: result.extracted?.lab_name || null } as DiseaseReport;
-    setAllReports(current => [report, ...current.filter(r => r.id !== report.id)]);
-    if (result.profile) {
-      setProfile(current => ({
-        ...current,
-        name: result.profile?.name ?? current.name,
-        age: result.profile?.age ?? current.age,
-        gender: result.profile?.gender ?? current.gender,
-        date_of_birth: result.profile?.date_of_birth ?? current.date_of_birth,
-        mobile_number: result.profile?.mobile_number ?? current.mobile_number
-      }));
+  function handleReportUploaded(result: {
+    report: DiseaseReport;
+      extracted: ExtractedReportMetadata;
+      message: string;
+    }) {
+      const report = {
+        ...result.report,
+        lab_name: result.extracted?.lab_name || null
+      } as DiseaseReport;
+
+      setAllReports(current => [
+        report,
+        ...current.filter(r => r.id !== report.id)
+      ]);
+
+      setNotice(result.message || 'Report uploaded.');
+      void refreshNotifications();
     }
-    setNotice(result.message || 'Report uploaded.');
-    void refreshNotifications();
+
+    function openProfileEditor() {
+    setEditAge(profile.age?.toString() ?? '');
+    setEditGender(profile.gender ?? '');
+    setProfileEditOpen(true);
+  }
+
+  async function saveProfileDetails() {
+    setProfileSaving(true);
+
+    const res = await fetch('/api/profile/details', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        age: editAge.trim() ? Number(editAge) : null,
+        gender: editGender || null
+      })
+    });
+
+    const json = await res.json();
+    setProfileSaving(false);
+
+    if (!res.ok) {
+      setNotice(json.error || 'Could not update profile.');
+      return;
+    }
+
+    setProfile(current => ({
+      ...current,
+      age: json.profile?.age ?? null,
+      gender: json.profile?.gender ?? null
+    }));
+
+    setProfileEditOpen(false);
+    setNotice('Age and gender updated.');
+
+    await refreshNotifications();
   }
 
   return <div className="mx-auto max-w-7xl">
@@ -144,8 +212,38 @@ export function DashboardClient({
         <div className="flex flex-wrap items-center gap-5">
           <div className="relative"><ProfileAvatar name={profile.name} photo={profile.photo_url}/><label className="absolute -bottom-2 -right-2 grid h-9 w-9 cursor-pointer place-items-center rounded-xl bg-ink text-white shadow"><Camera size={15}/><input type="file" accept="image/*" className="hidden" onChange={uploadPhoto}/></label></div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2"><h2 className="text-xl font-semibold">{profile.name}</h2>{profile.is_verified && <ShieldCheck size={20} className="text-moss"/>}</div>
-            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-black/50"><span><b className="text-ink">Age</b> {profile.age ?? '—'}</span><span><b className="text-ink">Gender</b> {profile.gender ?? '—'}</span><span><b className="text-ink">Reports</b> {allReports.length}</span></div>
+            <div className="flex items-center justify-between gap-3">
+  <div className="flex items-center gap-2">
+      <h2 className="text-xl font-semibold">{profile.name}</h2>
+
+      {profile.is_verified && (
+        <ShieldCheck size={20} className="text-moss"/>
+      )}
+    </div>
+
+    <button
+      onClick={openProfileEditor}
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-black/5 text-black/55 hover:bg-black/10"
+      aria-label="Edit age and gender"
+      title="Edit age and gender"
+    >
+      <Pencil size={14}/>
+    </button>
+  </div>
+
+  <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-black/50">
+    <span>
+      <b className="text-ink">Age</b> {profile.age ?? '—'}
+    </span>
+
+    <span>
+      <b className="text-ink">Gender</b> {profile.gender ?? '—'}
+    </span>
+
+    <span>
+      <b className="text-ink">Reports</b> {allReports.length}
+    </span>
+  </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="rounded-full bg-mint px-3 py-1.5 text-xs font-semibold text-moss">Identity verified</span>
               <Link href={`/verify/${profile.public_share_token}`} target="_blank" className="rounded-full bg-black/5 px-3 py-1.5 text-xs font-semibold">Verify card</Link>
@@ -195,6 +293,15 @@ export function DashboardClient({
     </section>
 
     <ReportUploadDialog open={uploadOpen} onClose={() => setUploadOpen(false)} onUploaded={handleReportUploaded}/>
+    <ProfileEditDialog open={profileEditOpen}
+      age={editAge}
+      gender={editGender}
+      saving={profileSaving}
+      onAgeChange={setEditAge}
+      onGenderChange={setEditGender}
+      onSave={saveProfileDetails}
+      onClose={() => !profileSaving && setProfileEditOpen(false)}
+    />  
     <NotificationDrawer open={notificationOpen} onClose={() => { setNotificationOpen(false); setNotifications(current => current.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))); }} notifications={notifications}/>
   </div>;
 }
@@ -223,4 +330,110 @@ function NotificationDrawer({ open, onClose, notifications }: { open: boolean; o
       })}</div>
     </aside>
   </div>;
+}
+
+function ProfileEditDialog({
+  open,
+  age,
+  gender,
+  saving,
+  onAgeChange,
+  onGenderChange,
+  onSave,
+  onClose
+}: {
+  open: boolean;
+  age: string;
+  gender: string;
+  saving: boolean;
+  onAgeChange: (value: string) => void;
+  onGenderChange: (value: string) => void;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[95] flex items-center justify-center bg-black/30 p-4"
+      onMouseDown={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[.18em] text-moss">
+              Profile
+            </p>
+
+            <h2 className="mt-1 text-xl font-semibold">
+              Edit age and gender
+            </h2>
+          </div>
+
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="grid h-9 w-9 place-items-center rounded-xl bg-black/5"
+            aria-label="Close"
+          >
+            <X size={17}/>
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          <label>
+            <span className="label">Age</span>
+
+            <input
+              type="number"
+              min="0"
+              max="130"
+              className="input"
+              value={age}
+              onChange={e => onAgeChange(e.target.value)}
+              placeholder="Enter age"
+            />
+          </label>
+
+          <label>
+            <span className="label">Gender</span>
+
+            <select
+              className="input"
+              value={gender}
+              onChange={e => onGenderChange(e.target.value)}
+            >
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">
+                Prefer not to say
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="btn-secondary"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="btn-primary disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

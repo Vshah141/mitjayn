@@ -13,8 +13,8 @@ export function BookingClient({lab}:{lab:Lab}){
   useEffect(()=>{setSlot('');fetch(`/api/bookings/availability?labId=${encodeURIComponent(lab.id)}&date=${date}`).then(r=>r.json()).then(j=>setTaken(j.taken||[])).catch(()=>setTaken([]));},[date,lab.id]);
   async function book(){setError('');if(!name.trim())return setError('Enter the report/test name.');if(!slot)return setError('Choose an available time slot.');setLoading(true);const res=await fetch('/api/bookings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({lab_id:lab.id,report_name:name.trim(),report_description:description.trim(),booking_date:date,time_slot:slot})});const json=await res.json();setLoading(false);if(!res.ok)return setError(json.error||'Could not complete booking.');
     if(json.booking?.id?.startsWith?.('demo-')){
-      const current=JSON.parse(localStorage.getItem('verihealth-demo-bookings')||'[]');
-      localStorage.setItem('verihealth-demo-bookings',JSON.stringify([...current,{...json.booking,lab_name:lab.name,profile_id:'demo',created_at:new Date().toISOString()}]));
+      const current=JSON.parse(localStorage.getItem('mitjayn-demo-bookings')||'[]');
+      localStorage.setItem('mitjayn-demo-bookings',JSON.stringify([...current,{...json.booking,lab_name:lab.name,profile_id:'demo',created_at:new Date().toISOString()}]));
     }
     setDone(true);}
   if(done)return <div className="card mx-auto max-w-2xl p-8 text-center"><div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-mint text-moss"><CheckCircle2 size={30}/></div><h1 className="mt-5 text-3xl font-semibold">Appointment booked</h1><p className="mt-2 text-black/50">{name} at {lab.name} on {new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})} at {slot}.</p><div className="mt-6 flex justify-center gap-3"><button className="btn-primary" onClick={()=>router.push('/dashboard#bookings')}>View dashboard</button><button className="btn-secondary" onClick={()=>{setDone(false);setName('');setDescription('');setSlot('')}}>Book another</button></div></div>;

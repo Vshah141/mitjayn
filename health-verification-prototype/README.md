@@ -1,4 +1,4 @@
-# VeriHealth Prototype
+# Mitjayn Prototype
 
 Pitch-ready prototype for verified health reports, public status cards, report authenticity QR codes, partner-lab discovery, favorites, and test bookings.
 
@@ -11,7 +11,7 @@ npm run dev
 
 Open `http://localhost:3000/login` and use:
 
-- Email: `demo@verihealth.app`
+- Email: `demo@mitjayn.app`
 - Password: `Demo123!`
 
 With no Supabase environment variables present, the app runs against built-in demo data so the product can be reviewed before any backend setup.
@@ -34,3 +34,7 @@ See `SETUP.md` for Supabase, Google OAuth, RLS verification and Vercel deploymen
 - Public report authenticity goes through a restricted RPC; actual PDF hash verification is performed server-side when the service role is configured.
 - Profile photos and reports are in private Storage buckets.
 - Lab-issued PDFs receive a QR pointing to `/verify-report/[verificationCode]` and are SHA-256 hashed after QR embedding.
+
+## Existing deployment upgrade
+
+If this app is already deployed, use `UPGRADE.md` rather than rerunning the fresh-project setup. The upgrade adds report upload/OCR, grouped notifications, the Mitjayn rebrand, and the Yash Adani demo profile.

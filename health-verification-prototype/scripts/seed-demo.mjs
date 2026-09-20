@@ -9,7 +9,8 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 if (!url || !service) throw new Error('Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before running npm run seed:demo');
 const supabase = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } });
 
-const email = 'demo@verihealth.app';
+const email = 'demo@mitjayn.app';
+const legacyEmail = 'demo@verihealth.app';
 const password = 'Demo123!';
 
 const parents = [
@@ -34,12 +35,15 @@ const branches = [
 
 async function ensureUser() {
   const { data: usersData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  let user = usersData?.users?.find(u => u.email === email);
+  let user = usersData?.users?.find(u => u.email === email) || usersData?.users?.find(u => u.email === legacyEmail);
   if (!user) {
-    const { data, error } = await supabase.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: 'Maya Patel' } });
-    if (error) throw error; user = data.user;
+    const { data, error } = await supabase.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: 'Yash Adani' } });
+    if (error) throw error;
+    user = data.user;
   } else {
-    await supabase.auth.admin.updateUserById(user.id, { password, email_confirm: true });
+    const { data, error } = await supabase.auth.admin.updateUserById(user.id, { email, password, email_confirm: true, user_metadata: { ...user.user_metadata, full_name: 'Yash Adani' } });
+    if (error) throw error;
+    user = data.user;
   }
   return user;
 }
@@ -66,7 +70,8 @@ async function main() {
   const user = await ensureUser();
   await supabase.from('labs').upsert(parents.map(([id,name,address,postal_code,rating,latitude,longitude]) => ({id,name,address,postal_code,rating,latitude,longitude,parent_lab_id:null})), { onConflict:'id' });
   await supabase.from('labs').upsert(branches.map(([id,parent_lab_id,name,address,postal_code,rating,latitude,longitude]) => ({id,parent_lab_id,name,address,postal_code,rating,latitude,longitude})), { onConflict:'id' });
-  await supabase.from('profiles').upsert({ id:user.id, name:'Maya Patel', age:29, gender:'Female', mobile_number:'+1 555 014 2291', date_of_birth:'1997-04-14', is_verified:true, hide_name:false }, { onConflict:'id' });
+  await supabase.from('profiles').upsert({ id:user.id, name:'Yash Adani', age:30, gender:'Male', mobile_number:'+1 555 014 2291', date_of_birth:'1996-05-12', is_verified:true, hide_name:false }, { onConflict:'id' });
+  await supabase.from('notifications').delete().eq('profile_id', user.id);
 
   const { data: oldFiles } = await supabase.storage.from('reports').list(user.id, { limit:100 });
   if (oldFiles?.length) await supabase.storage.from('reports').remove(oldFiles.map(f => `${user.id}/${f.name}`));
@@ -81,12 +86,12 @@ async function main() {
   ];
   for (const [disease,status,labId,labName,date] of configs) {
     const verificationCode = crypto.randomBytes(16).toString('base64url');
-    const bytes = await makeReportPdf({ patient:'Maya Patel', disease, status, date, verificationCode, labName });
+    const bytes = await makeReportPdf({ patient:'Yash Adani', disease, status, date, verificationCode, labName });
     const hash = crypto.createHash('sha256').update(bytes).digest('hex');
     const path = `${user.id}/${crypto.randomUUID()}.pdf`;
     const { error: uploadError } = await supabase.storage.from('reports').upload(path, bytes, { contentType:'application/pdf', upsert:false });
     if (uploadError) throw uploadError;
-    const { error } = await supabase.from('disease_reports').insert({ profile_id:user.id, disease_name:disease, status, lab_id:labId, report_date:date, report_file_url:path, report_verification_code:verificationCode, report_file_hash:hash });
+    const { error } = await supabase.from('disease_reports').insert({ profile_id:user.id, disease_name:disease, status, lab_id:labId, report_date:date, report_file_url:path, report_verification_code:verificationCode, report_file_hash:hash, source_type:'lab_issued', verification_state:'verified' });
     if (error) throw error;
   }
 

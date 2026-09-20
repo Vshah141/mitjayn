@@ -8,7 +8,7 @@ import { createBrowserSupabase } from '@/lib/supabase-browser';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('demo@verihealth.app');
+  const [email, setEmail] = useState('demo@mitjayn.app');
   const [password, setPassword] = useState('Demo123!');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ export default function LoginPage() {
     e.preventDefault(); setError(''); setLoading(true);
     try {
       if (demo) {
-        if (email !== 'demo@verihealth.app' || password !== 'Demo123!') throw new Error('Use the demo credentials prefilled above.');
+        if (email !== 'demo@mitjayn.app' || password !== 'Demo123!') throw new Error('Use the demo credentials prefilled above.');
         document.cookie = 'demo-auth=1; path=/; SameSite=Lax';
       } else {
         const { error } = await createBrowserSupabase().auth.signInWithPassword({ email, password });
@@ -43,6 +43,6 @@ export default function LoginPage() {
     </form>
     <button onClick={google} className="btn-secondary mt-3 w-full"><Chrome size={17}/> Login with Google</button>
     <p className="mt-6 text-center text-sm text-black/50">New User? <Link className="font-semibold text-moss" href="/signup">Sign Up</Link></p>
-    {demo && <div className="mt-5 rounded-2xl bg-mint p-3 text-xs leading-5 text-moss"><b>Local demo mode</b><br/>demo@verihealth.app / Demo123!</div>}
+    {demo && <div className="mt-5 rounded-2xl bg-mint p-3 text-xs leading-5 text-moss"><b>Local demo mode</b><br/>demo@mitjayn.app / Demo123!</div>}
   </AuthCard>;
 }

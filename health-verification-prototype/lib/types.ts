@@ -1,4 +1,7 @@
 export type ReportStatus = 'verified_negative' | 'not_found' | 'not_updated' | 'detected_positive';
+export type ReportSource = 'lab_issued' | 'user_upload';
+export type ReportVerificationState = 'pending' | 'verified' | 'rejected';
+export type NotificationType = 'booking' | 'report' | 'profile';
 
 export type Profile = {
   id: string;
@@ -13,6 +16,18 @@ export type Profile = {
   public_share_token: string;
 };
 
+export type ExtractedReportMetadata = {
+  patient_name?: string | null;
+  age?: number | null;
+  gender?: string | null;
+  date_of_birth?: string | null;
+  mobile_number?: string | null;
+  lab_name?: string | null;
+  report_date?: string | null;
+  disease_name?: string | null;
+  extracted_status?: ReportStatus | null;
+};
+
 export type DiseaseReport = {
   id: string;
   profile_id: string;
@@ -24,6 +39,9 @@ export type DiseaseReport = {
   report_file_url?: string | null;
   report_verification_code: string;
   report_file_hash?: string | null;
+  source_type?: ReportSource;
+  verification_state?: ReportVerificationState;
+  extracted_metadata?: ExtractedReportMetadata | null;
 };
 
 export type Lab = {
@@ -49,5 +67,16 @@ export type Booking = {
   booking_date: string;
   time_slot: string;
   status: 'booked' | 'completed' | 'cancelled';
+  created_at: string;
+};
+
+export type NotificationItem = {
+  id: string;
+  profile_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  metadata?: Record<string, unknown> | null;
+  read_at: string | null;
   created_at: string;
 };

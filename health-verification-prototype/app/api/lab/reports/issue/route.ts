@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   const path = `${profileId}/${crypto.randomUUID()}.pdf`;
   const { error: uploadError } = await admin.storage.from('reports').upload(path, output, { contentType: 'application/pdf', upsert: false });
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 400 });
-  const { data, error } = await admin.from('disease_reports').insert({ profile_id: profileId, disease_name: diseaseName, status, lab_id: labId, report_date: reportDate, report_file_url: path, report_verification_code: verificationCode, report_file_hash: fileHash }).select('id,report_verification_code').single();
+  const { data, error } = await admin.from('disease_reports').insert({ profile_id: profileId, disease_name: diseaseName, status, lab_id: labId, report_date: reportDate, report_file_url: path, report_verification_code: verificationCode, report_file_hash: fileHash, source_type: 'lab_issued', verification_state: 'verified' }).select('id,report_verification_code').single();
   if (error) {
     await admin.storage.from('reports').remove([path]);
     return NextResponse.json({ error: error.message }, { status: 400 });

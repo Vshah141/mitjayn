@@ -1,4 +1,4 @@
-# VeriHealth Setup & Deployment
+# Mitjayn Setup & Deployment
 
 This repo supports two modes:
 
@@ -16,7 +16,7 @@ Open `http://localhost:3000/login`.
 
 Demo credentials:
 
-- Email: `demo@verihealth.app`
+- Email: `demo@mitjayn.app`
 - Password: `Demo123!`
 
 The local demo supports dashboard filtering, privacy toggle, share-link rotation, public card verification, generated demo report PDFs, report-authenticity pages, lab search/favorites, branch selection, geolocation sorting, slot availability, and booking. Demo bookings are persisted in browser localStorage so they appear on the dashboard after booking.
@@ -65,8 +65,8 @@ npm run seed:demo
 
 This creates/updates:
 
-- demo user `demo@verihealth.app` / `Demo123!`
-- profile data for Maya Patel
+- demo user `demo@mitjayn.app` / `Demo123!`
+- profile data for Yash Adani
 - 10 parent labs + 5 branch records
 - favorites
 - one upcoming booking
@@ -166,7 +166,7 @@ The in-process rate limiter included here is suitable for a pitch prototype, not
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `NEXT_PUBLIC_APP_URL`
    - `LAB_STAFF_API_KEY`
-4. Set `NEXT_PUBLIC_APP_URL` to the deployed HTTPS URL, for example `https://verihealth-demo.vercel.app`.
+4. Set `NEXT_PUBLIC_APP_URL` to the deployed HTTPS URL, for example `https://mitjayn-demo.vercel.app`.
 5. Deploy.
 6. Add the final `/auth/callback` URL to Supabase's allowed redirect URLs.
 7. Re-run the seed locally with `NEXT_PUBLIC_APP_URL` set to the final production URL if you want the seeded PDF QR codes to target production.
@@ -192,3 +192,16 @@ Verify this exact sequence:
 - Commit `.env.example`, never `.env.local`.
 - Never commit the service-role key, Google client secret, `LAB_STAFF_API_KEY`, or real patient data.
 - The seeded account/password is only for this prototype and should not be reused in a real deployment.
+
+## 11. Report upload + extraction behavior
+
+The dashboard **Add report** action accepts PDF/JPG/JPEG files. Browser uploads go directly to the private Supabase `reports` bucket under `<user-id>/uploads/`, then the authenticated server route downloads and parses the file. This avoids routing the full file body through the Vercel function.
+
+- Text PDFs are parsed directly.
+- Scanned PDFs fall back to OCR on the first two rendered pages.
+- JPG/JPEG reports use OCR.
+- The prototype extracts supported disease, reported result, report date, lab name, patient name, age, gender, and DOB where present.
+- Extracted private profile fields are applied to the user's profile.
+- User-uploaded reports are always created with `verification_state = pending`; they are not included in the public verified health card until a trusted lab flow changes them to verified.
+
+For an existing deployment, run `supabase/migrations/20260920_mitjayn_upgrade.sql` before deploying this version. See `UPGRADE.md`.

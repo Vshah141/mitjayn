@@ -2,7 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'VeriHealth — verified health reports',
+  title: 'Mitjayn — verified health reports',
   description: 'Pitch-ready health report verification and lab booking prototype.'
 };
 

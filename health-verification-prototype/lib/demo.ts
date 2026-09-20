@@ -1,13 +1,13 @@
-import { Booking, DiseaseReport, Lab, Profile } from './types';
+import { Booking, DiseaseReport, Lab, NotificationItem, Profile } from './types';
 
 export const DEMO_TOKEN = 'demo-share-a7k3m9';
 export const DEMO_PROFILE: Profile = {
   id: '11111111-1111-4111-8111-111111111111',
-  name: 'Maya Patel',
-  age: 29,
-  gender: 'Female',
+  name: 'Yash Adani',
+  age: 30,
+  gender: 'Male',
   mobile_number: '+1 555 014 2291',
-  date_of_birth: '1997-04-14',
+  date_of_birth: '1996-05-12',
   photo_url: null,
   is_verified: true,
   hide_name: false,
@@ -15,11 +15,11 @@ export const DEMO_PROFILE: Profile = {
 };
 
 export const DEMO_REPORTS: DiseaseReport[] = [
-  { id: 'r1', profile_id: DEMO_PROFILE.id, disease_name: 'Covid-19', status: 'verified_negative', lab_id: 'l1', lab_name: 'Northstar Diagnostics', report_date: '2026-09-05', report_verification_code: 'REP-COVID-9A17', report_file_hash: 'demo-covid-hash' },
-  { id: 'r2', profile_id: DEMO_PROFILE.id, disease_name: 'Dengue', status: 'detected_positive', lab_id: 'l2', lab_name: 'Atlas Clinical Labs — Uptown', report_date: '2026-08-28', report_verification_code: 'REP-DENGUE-7K22', report_file_hash: 'demo-dengue-hash' },
-  { id: 'r3', profile_id: DEMO_PROFILE.id, disease_name: 'Malaria', status: 'verified_negative', lab_id: 'l3', lab_name: 'Cedar Health Labs', report_date: '2026-07-17', report_verification_code: 'REP-MALARIA-5Q41', report_file_hash: 'demo-malaria-hash' },
-  { id: 'r4', profile_id: DEMO_PROFILE.id, disease_name: 'Monkeypox', status: 'not_found', lab_id: null, lab_name: null, report_date: '2026-06-03', report_verification_code: 'REP-MPX-3H14', report_file_hash: 'demo-mpx-hash' },
-  { id: 'r5', profile_id: DEMO_PROFILE.id, disease_name: 'Swine Flu', status: 'not_updated', lab_id: 'l4', lab_name: 'Veridian Diagnostics', report_date: '2026-05-22', report_verification_code: 'REP-H1N1-1M88', report_file_hash: 'demo-h1n1-hash' }
+  { id: 'r1', profile_id: DEMO_PROFILE.id, disease_name: 'Covid-19', status: 'verified_negative', lab_id: 'l1', lab_name: 'Northstar Diagnostics', report_date: '2026-09-05', report_verification_code: 'REP-COVID-9A17', report_file_hash: 'demo-covid-hash', source_type: 'lab_issued', verification_state: 'verified' },
+  { id: 'r2', profile_id: DEMO_PROFILE.id, disease_name: 'Dengue', status: 'detected_positive', lab_id: 'l2', lab_name: 'Atlas Clinical Labs — Uptown', report_date: '2026-08-28', report_verification_code: 'REP-DENGUE-7K22', report_file_hash: 'demo-dengue-hash', source_type: 'lab_issued', verification_state: 'verified' },
+  { id: 'r3', profile_id: DEMO_PROFILE.id, disease_name: 'Malaria', status: 'verified_negative', lab_id: 'l3', lab_name: 'Cedar Health Labs', report_date: '2026-07-17', report_verification_code: 'REP-MALARIA-5Q41', report_file_hash: 'demo-malaria-hash', source_type: 'lab_issued', verification_state: 'verified' },
+  { id: 'r4', profile_id: DEMO_PROFILE.id, disease_name: 'Monkeypox', status: 'not_found', lab_id: null, lab_name: null, report_date: '2026-06-03', report_verification_code: 'REP-MPX-3H14', report_file_hash: 'demo-mpx-hash', source_type: 'lab_issued', verification_state: 'verified' },
+  { id: 'r5', profile_id: DEMO_PROFILE.id, disease_name: 'Swine Flu', status: 'not_updated', lab_id: 'l4', lab_name: 'Veridian Diagnostics', report_date: '2026-05-22', report_verification_code: 'REP-H1N1-1M88', report_file_hash: 'demo-h1n1-hash', source_type: 'lab_issued', verification_state: 'verified' }
 ];
 
 export const DEMO_LABS: Lab[] = [
@@ -41,5 +41,11 @@ export const DEMO_LABS: Lab[] = [
 ];
 
 export const DEMO_BOOKINGS: Booking[] = [
-  { id: 'b1', profile_id: DEMO_PROFILE.id, lab_id: 'l3', lab_name: 'Cedar Health Labs', report_name: 'Malaria follow-up panel', report_description: 'Follow-up after travel', booking_date: '2026-09-12', time_slot: '10:30 AM', status: 'booked', created_at: '2026-09-09T15:30:00Z' }
+  { id: 'b1', profile_id: DEMO_PROFILE.id, lab_id: 'l3', lab_name: 'Cedar Health Labs', report_name: 'Malaria follow-up panel', report_description: 'Follow-up after travel', booking_date: '2026-09-24', time_slot: '10:30 AM', status: 'booked', created_at: '2026-09-19T15:30:00Z' }
+];
+
+export const DEMO_NOTIFICATIONS: NotificationItem[] = [
+  { id: 'n1', profile_id: DEMO_PROFILE.id, type: 'booking', title: 'Booking confirmed', message: 'Malaria follow-up panel is booked for September 24 at 10:30 AM.', read_at: null, created_at: '2026-09-19T15:31:00Z' },
+  { id: 'n2', profile_id: DEMO_PROFILE.id, type: 'report', title: 'Verified report added', message: 'Covid-19 report is verified.', read_at: null, created_at: '2026-09-18T12:00:00Z' },
+  { id: 'n3', profile_id: DEMO_PROFILE.id, type: 'profile', title: 'Profile updated', message: 'Changed: profile photo.', read_at: '2026-09-18T12:30:00Z', created_at: '2026-09-18T11:55:00Z' }
 ];

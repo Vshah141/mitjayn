@@ -1,26 +1,27 @@
 import crypto from 'crypto';
 import { cookies, headers } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { DEMO_BOOKINGS, DEMO_LABS, DEMO_PROFILE, DEMO_REPORTS, DEMO_TOKEN } from './demo';
+import { DEMO_BOOKINGS, DEMO_LABS, DEMO_NOTIFICATIONS, DEMO_PROFILE, DEMO_REPORTS, DEMO_TOKEN } from './demo';
 import { adminSupabase, isSupabaseConfigured } from './supabase';
-import { Booking, DiseaseReport, Lab, Profile } from './types';
+import { Booking, DiseaseReport, Lab, NotificationItem, Profile } from './types';
 
-export async function getCurrentUserData(): Promise<{ profile: Profile; reports: DiseaseReport[]; bookings: Booking[] }> {
+export async function getCurrentUserData(): Promise<{ profile: Profile; reports: DiseaseReport[]; bookings: Booking[]; notifications: NotificationItem[] }> {
   if (!isSupabaseConfigured) {
     const c = cookies();
     const token = c.get('demo-share-token')?.value || DEMO_PROFILE.public_share_token;
     const hide = c.get('demo-hide-name')?.value === '1';
-    return { profile: { ...DEMO_PROFILE, public_share_token: token, hide_name: hide }, reports: DEMO_REPORTS, bookings: DEMO_BOOKINGS };
+    return { profile: { ...DEMO_PROFILE, public_share_token: token, hide_name: hide }, reports: DEMO_REPORTS, bookings: DEMO_BOOKINGS, notifications: DEMO_NOTIFICATIONS };
   }
   const supabase = createServerComponentClient({ cookies });
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('UNAUTHENTICATED');
-  const [{ data: profile, error: pe }, { data: reports, error: re }, { data: bookings, error: be }] = await Promise.all([
+  const [{ data: profile, error: pe }, { data: reports, error: re }, { data: bookings, error: be }, { data: notifications, error: ne }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase.from('disease_reports').select('*, labs(name)').eq('profile_id', user.id).order('report_date', { ascending: false }),
-    supabase.from('bookings').select('*, labs(name)').eq('profile_id', user.id).order('booking_date', { ascending: true })
+    supabase.from('bookings').select('*, labs(name)').eq('profile_id', user.id).order('booking_date', { ascending: true }),
+    supabase.from('notifications').select('*').eq('profile_id', user.id).order('created_at', { ascending: false }).limit(50)
   ]);
-  if (pe || re || be) throw pe || re || be;
+  if (pe || re || be || ne) throw pe || re || be || ne;
   let signedPhoto: string | null = null;
   if (profile.photo_url) {
     const { data } = await supabase.storage.from('profile-photos').createSignedUrl(profile.photo_url, 3600);
@@ -28,8 +29,9 @@ export async function getCurrentUserData(): Promise<{ profile: Profile; reports:
   }
   return {
     profile: { ...profile, photo_url: signedPhoto } as Profile,
-    reports: (reports ?? []).map((r: any) => ({ ...r, lab_name: r.labs?.name ?? null })) as DiseaseReport[],
-    bookings: (bookings ?? []).map((b: any) => ({ ...b, lab_name: b.labs?.name ?? null })) as Booking[]
+    reports: (reports ?? []).map((r: any) => ({ ...r, lab_name: r.labs?.name ?? r.extracted_metadata?.lab_name ?? null })) as DiseaseReport[],
+    bookings: (bookings ?? []).map((b: any) => ({ ...b, lab_name: b.labs?.name ?? null })) as Booking[],
+    notifications: (notifications ?? []) as NotificationItem[]
   };
 }
 
@@ -94,8 +96,8 @@ export async function getReportAuthenticity(code: string) {
   }
   const admin = adminSupabase();
   if (!admin) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for public report verification.');
-  const { data: report } = await admin.from('disease_reports').select('disease_name,status,report_date,report_file_url,report_file_hash, labs(name), profiles(name,hide_name)').eq('report_verification_code', code).single();
-  if (!report) return null;
+  const { data: report } = await admin.from('disease_reports').select('disease_name,status,report_date,report_file_url,report_file_hash,verification_state, labs(name), profiles(name,hide_name)').eq('report_verification_code', code).single();
+  if (!report || report.verification_state !== 'verified') return null;
   let matches: boolean | null = null;
   if (report.report_file_url && report.report_file_hash) {
     const { data: file } = await admin.storage.from('reports').download(report.report_file_url);

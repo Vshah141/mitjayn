@@ -85,7 +85,16 @@ async function main() {
   const user = await ensureUser();
   await supabase.from('labs').upsert(parents.map(([id,name,address,postal_code,rating,latitude,longitude]) => ({id,name,address,postal_code,rating,latitude,longitude,parent_lab_id:null})), { onConflict:'id' });
   await supabase.from('labs').upsert(branches.map(([id,parent_lab_id,name,address,postal_code,rating,latitude,longitude]) => ({id,parent_lab_id,name,address,postal_code,rating,latitude,longitude})), { onConflict:'id' });
-  await supabase.from('profiles').upsert({ id:user.id, name:'Yash Adani', age:30, gender:'Male', mobile_number:'+1 555 014 2291', date_of_birth:'1996-05-12', is_verified:true, hide_name:false }, { onConflict:'id' });
+  await supabase.from('profiles').upsert({
+    id: user.id,
+    name: 'Yash Adani',
+    age: null,
+    gender: null,
+    mobile_number: '+1 555 014 2291',
+    date_of_birth: '1996-05-12',
+    is_verified: true,
+    hide_name: false
+  }, { onConflict: 'id' });
   await supabase.from('notifications').delete().eq('profile_id', user.id);
 
   const { data: oldFiles } = await supabase.storage.from('reports').list(user.id, { limit:100 });

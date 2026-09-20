@@ -2,13 +2,15 @@
 
 import { FileText, Loader2, Upload, X } from 'lucide-react';
 import { useState } from 'react';
-import type { DiseaseReport, ExtractedReportMetadata, Profile } from '@/lib/types';
+import type {
+  DiseaseReport,
+  ExtractedReportMetadata
+} from '@/lib/types';
 import { createBrowserSupabase } from '@/lib/supabase-browser';
 
 type UploadResponse = {
   report: DiseaseReport;
   extracted: ExtractedReportMetadata;
-  profile: Profile | null;
   message: string;
 };
 
@@ -83,7 +85,11 @@ export function ReportUploadDialog({
           <div>
             <p className="text-xs font-semibold uppercase tracking-[.18em] text-moss">Add report</p>
             <h2 className="mt-1 text-2xl font-semibold">Upload a lab report</h2>
-            <p className="mt-2 text-sm leading-6 text-black/50">PDF and JPG/JPEG are supported up to 10 MB. Mitjayn extracts the report details and profile information automatically.</p>
+            <p className="mt-2 text-sm leading-6 text-black/50">
+              PDF and JPG/JPEG are supported up to 10 MB. Mitjayn extracts
+              only the report name, report date and lab. Profile details are
+              never changed from an uploaded report.
+              </p>
           </div>
           <button onClick={close} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-black/5" aria-label="Close"><X size={18}/></button>
         </div>
@@ -114,16 +120,26 @@ export function ReportUploadDialog({
           <div className="mt-6 rounded-3xl bg-mint p-5">
             <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-white"><FileText size={19}/></span><div><p className="font-semibold">Report added</p><p className="text-xs text-moss">Pending lab verification</p></div></div>
             <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-              <Item label="Disease" value={result.extracted.disease_name}/>
-              <Item label="Reported result" value={result.extracted.extracted_status?.replaceAll('_', ' ')}/>
-              <Item label="Patient" value={result.extracted.patient_name}/>
-              <Item label="Lab" value={result.extracted.lab_name}/>
-              <Item label="DOB" value={result.extracted.date_of_birth}/>
-              <Item label="Gender" value={result.extracted.gender}/>
-              <Item label="Mobile" value={result.extracted.mobile_number}/>
+              <Item
+                label="Report name"
+                value={result.extracted.disease_name}
+              />
+
+              <Item
+                label="Report date"
+                value={result.extracted.report_date}
+              />
+
+              <Item
+                label="Lab"
+                value={result.extracted.lab_name}
+              />
             </dl>
           </div>
-          <p className="mt-4 text-xs leading-5 text-black/45">Extracted personal fields found in the report were applied to the profile. Review the profile after closing if OCR quality was poor.</p>
+          <p className="mt-4 text-xs leading-5 text-black/45">
+            No patient name, age, gender, DOB, mobile number or result
+            status is extracted from user-uploaded reports.
+          </p>
           <div className="mt-5 flex justify-end"><button onClick={close} className="btn-primary">Done</button></div>
         </>}
       </div>
